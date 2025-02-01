@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils"
 // Importation du composant SketchPicker de react-color pour le sélecteur de couleur
 import { SketchPicker } from "react-color"
 import Image from "next/image"
+import ContactSection from "@/components/ContactSection"
 
 // Définition de l'interface pour l'état des filtres
 interface FilterState {
@@ -339,16 +340,16 @@ export default function PhotoEditor() {
 
   // Rendu du composant
   return (
-    <div className="container mx-auto p-4 max-w-6xl">
+    <div className="container mx-auto p-4 max-w-6xl ">
       <Card className="bg-background">
         <CardContent className="p-6">
-          <h1 className="text-2xl font-bold mb-6">RoMagic Pro &nbsp;&nbsp; 
+          <h1 className="text-2xl font-bold mb-2">RoMagic Pro &nbsp;&nbsp;
             <Image src="/logo-romagic.jpg" alt="Logo" width={120} height={120} className="inline-block" />
           </h1>
 
           <div className="grid md:grid-cols-[300px,1fr] gap-6 ">
             {/* Panneau de contrôle */}
-            <div className="space-y-6">
+            <div className="space-y-6 order-2 md:order-1 ">
               <Tabs defaultValue="filters" className="w-full">
                 <TabsList className="w-full">
                   <TabsTrigger value="filters" className="flex-1">
@@ -570,7 +571,7 @@ export default function PhotoEditor() {
             </div>
 
             {/* Zone d'aperçu de l'image */}
-            <div className="relative min-h-[400px] border rounded-lg overflow-hidden bg-muted/10">
+            <div className="relative min-h-[400px] border rounded-lg overflow-hidden bg-muted/10 order-1 md:order-2 ">
               <div className="absolute inset-0 flex items-center justify-center">
                 <Image
                   ref={imageRef}
@@ -615,6 +616,9 @@ export default function PhotoEditor() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Section de contact */}
+      <ContactSection />
     </div>
   )
 }
