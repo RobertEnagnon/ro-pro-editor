@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils"
 
 // Importation du composant SketchPicker de react-color pour le sélecteur de couleur
 import { SketchPicker } from "react-color"
+import Image from "next/image"
 
 // Définition de l'interface pour l'état des filtres
 interface FilterState {
@@ -216,12 +217,12 @@ export default function PhotoEditor() {
   const saveImage = useCallback(async () => {
     const canvas = document.createElement("canvas")
     const ctx = canvas.getContext("2d")
-    const img = imageRef.current
+    const Image = imageRef.current
 
-    if (!ctx || !img) return
+    if (!ctx || !Image) return
 
-    canvas.width = img.naturalWidth
-    canvas.height = img.naturalHeight
+    canvas.width = Image.naturalWidth
+    canvas.height = Image.naturalHeight
 
     // Application des filtres
     ctx.filter = `brightness(${filters.brightness}%) saturate(${filters.saturation}%) 
@@ -232,7 +233,7 @@ export default function PhotoEditor() {
     ctx.translate(canvas.width / 2, canvas.height / 2)
     ctx.rotate((transform.rotate * Math.PI) / 180)
     ctx.scale(transform.flipH, transform.flipV)
-    ctx.drawImage(img, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height)
+    ctx.drawImage(Image, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height)
 
     // Ajout du texte
     ctx.font = `${textSize}px Arial`
@@ -551,7 +552,7 @@ export default function PhotoEditor() {
                 </Button>
                 <Button variant="secondary" className="w-full" onClick={removeBackground} disabled={loading}>
                   {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Wand2 className="w-4 h-4 mr-2" />}
-                  Supprimer l'arrière-plan
+                  {"Supprimer l'arrière-plan"}
                 </Button>
                 <div className="flex space-x-2">
                   <Button variant="outline" onClick={undo} disabled={historyIndex <= 0}>
@@ -569,7 +570,7 @@ export default function PhotoEditor() {
             {/* Zone d'aperçu de l'image */}
             <div className="relative min-h-[400px] border rounded-lg overflow-hidden bg-muted/10">
               <div className="absolute inset-0 flex items-center justify-center">
-                <img
+                <Image
                   ref={imageRef}
                   src={image || "/undraw_photos_re_pvh3.svg"}
                   alt="Aperçu de l'image"
