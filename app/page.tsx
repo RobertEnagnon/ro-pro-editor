@@ -359,7 +359,7 @@ export default function PhotoEditor() {
                     ) : (
                       <Wand2 className="w-4 h-4 mr-2" />
                     )}
-                    Supprimer l'arrière-plan
+                    {"Supprimer l'arrière-plan"}
                   </Button>
                 </div>
               </div>
