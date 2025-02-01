@@ -285,9 +285,15 @@ export default function PhotoEditor() {
     const ctx = canvas?.getContext("2d")
     if (!canvas || !ctx) return
 
+    // Obtenir les dimensions réelles du canvas
     const rect = canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    // Calculer le ratio entre les dimensions réelles et les dimensions du canvas
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+
+    // Calculer la position exacte du curseur sur le canvas
+    const x = (e.clientX - rect.left) * scaleX
+    const y = (e.clientY - rect.top) * scaleY
 
     ctx.beginPath()
     ctx.moveTo(x, y)
@@ -305,11 +311,15 @@ export default function PhotoEditor() {
     const ctx = canvas?.getContext("2d")
     if (!canvas || !ctx) return
 
+    // Obtenir les dimensions réelles du canvas
     const rect = canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    // const x = e.clientX 
-    const y = e.clientY - rect.top
-    // const y = e.clientY
+    // Calculer le ratio entre les dimensions réelles et les dimensions du canvas
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+
+    // Calculer la position exacte du curseur sur le canvas
+    const x = (e.clientX - rect.left) * scaleX
+    const y = (e.clientY - rect.top) * scaleY
 
     ctx.lineTo(x, y)
     ctx.stroke()
@@ -577,6 +587,8 @@ export default function PhotoEditor() {
                 <canvas
                   ref={canvasRef}
                   className="absolute inset-0 w-full h-full"
+                  width={imageRef.current?.naturalWidth || 0}
+                  height={imageRef.current?.naturalHeight || 0}
                   onMouseDown={handleDrawStart}
                   onMouseMove={handleDraw}
                   onMouseUp={handleDrawEnd}
