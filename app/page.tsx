@@ -342,9 +342,11 @@ export default function PhotoEditor() {
     <div className="container mx-auto p-4 max-w-6xl">
       <Card className="bg-background">
         <CardContent className="p-6">
-          <h1 className="text-2xl font-bold mb-6">Éditeur de Photos Pro</h1>
+          <h1 className="text-2xl font-bold mb-6">RoMagic Pro &nbsp;&nbsp; 
+            <Image src="/logo-romagic.jpg" alt="Logo" width={120} height={120} className="inline-block" />
+          </h1>
 
-          <div className="grid md:grid-cols-[300px,1fr] gap-6">
+          <div className="grid md:grid-cols-[300px,1fr] gap-6 ">
             {/* Panneau de contrôle */}
             <div className="space-y-6">
               <Tabs defaultValue="filters" className="w-full">
@@ -365,7 +367,7 @@ export default function PhotoEditor() {
 
                 {/* Onglet des filtres */}
                 <TabsContent value="filters" className="space-y-4">
-                  <div className="space-y-4">
+                  <div className=" grid grid-cols-1 md:grid-cols-2 gap-4   content-center ">
                     {Object.entries(filters).map(([key, value]) => (
                       <div key={key}>
                         <Label className="text-sm font-medium mb-2 block">
@@ -573,6 +575,8 @@ export default function PhotoEditor() {
                 <Image
                   ref={imageRef}
                   src={image || "/undraw_photos_re_pvh3.svg"}
+                  width={imageRef.current?.naturalWidth || 0}
+                  height={imageRef.current?.naturalHeight || 0}
                   alt="Aperçu de l'image"
                   className={cn(
                     "max-w-full max-h-full object-contain transition-transform duration-200",
