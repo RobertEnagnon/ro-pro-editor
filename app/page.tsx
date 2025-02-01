@@ -19,6 +19,7 @@ import { SketchPicker } from "react-color"
 import Image from "next/image"
 import ContactSection from "@/components/ContactSection"
 
+// Définition des interfaces pour la gestion des états
 interface Filters {
   brightness: number
   saturation: number
@@ -39,15 +40,26 @@ interface TextPosition {
   y: number
 }
 
+// Valeurs par défaut des filtres
+const DEFAULT_FILTERS: Filters = {
+  brightness: 100,
+  saturation: 100,
+  inversion: 0,
+  grayscale: 0,
+  contrast: 100,
+  temperature: 0
+}
+
+// Valeurs par défaut des transformations
+const DEFAULT_TRANSFORM: Transform = {
+  rotate: 0,
+  flipH: 1,
+  flipV: 1
+}
+
+// Filtres prédéfinis
 const presetFilters = {
-  normal: {
-    brightness: 100,
-    saturation: 100,
-    inversion: 0,
-    grayscale: 0,
-    contrast: 100,
-    temperature: 0
-  },
+  normal: DEFAULT_FILTERS,
   warm: {
     brightness: 110,
     saturation: 120,
@@ -83,41 +95,69 @@ const presetFilters = {
 }
 
 export default function PhotoEditor() {
+  // États pour la gestion de l'image et des modifications
   const [image, setImage] = useState<string | null>(null)
-  const [filters, setFilters] = useState<Filters>(presetFilters.normal)
-  const [transform, setTransform] = useState<Transform>({ rotate: 0, flipH: 1, flipV: 1 })
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
+  const [transform, setTransform] = useState<Transform>(DEFAULT_TRANSFORM)
   const [loading, setLoading] = useState(false)
   const [history, setHistory] = useState<{ filters: Filters; transform: Transform }[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
+  
+  // États pour les outils de dessin
   const [drawMode, setDrawMode] = useState<"brush" | "eraser" | null>(null)
   const [brushColor, setBrushColor] = useState("#000000")
   const [brushSize, setBrushSize] = useState(5)
+  const [isDrawing, setIsDrawing] = useState(false)
+  
+  // États pour le texte
   const [text, setText] = useState("")
   const [textColor, setTextColor] = useState("#000000")
   const [textSize, setTextSize] = useState(24)
   const [textPosition, setTextPosition] = useState<TextPosition>({ x: 50, y: 50 })
-  const [isDrawing, setIsDrawing] = useState(false)
 
+  // Références pour les éléments DOM
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const contextRef = useRef<CanvasRenderingContext2D | null>(null)
 
+  /**
+   * Gère le changement de fichier image
+   * @param e - Événement de changement de fichier
+   */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
       reader.onload = () => {
         setImage(reader.result as string)
-        setFilters(presetFilters.normal)
-        setTransform({ rotate: 0, flipH: 1, flipV: 1 })
-        setHistory([])
-        setHistoryIndex(-1)
+        resetAll()
       }
       reader.readAsDataURL(file)
     }
   }
 
+  /**
+   * Réinitialise tous les paramètres à leurs valeurs par défaut
+   */
+  const resetAll = () => {
+    setFilters(DEFAULT_FILTERS)
+    setTransform(DEFAULT_TRANSFORM)
+    setText("")
+    setTextColor("#000000")
+    setTextSize(24)
+    setTextPosition({ x: 50, y: 50 })
+    setBrushColor("#000000")
+    setBrushSize(5)
+    setDrawMode(null)
+    setHistory([])
+    setHistoryIndex(-1)
+  }
+
+  /**
+   * Gère la rotation de l'image
+   * @param direction - Direction de rotation ("left" ou "right")
+   */
   const handleRotate = (direction: "left" | "right") => {
     setTransform((prev) => {
       const newTransform = {
@@ -129,6 +169,10 @@ export default function PhotoEditor() {
     })
   }
 
+  /**
+   * Gère le retournement de l'image
+   * @param direction - Direction du retournement ("horizontal" ou "vertical")
+   */
   const handleFlip = (direction: "horizontal" | "vertical") => {
     setTransform((prev) => {
       const newTransform = {
@@ -141,6 +185,11 @@ export default function PhotoEditor() {
     })
   }
 
+  /**
+   * Ajoute un état à l'historique des modifications
+   * @param newFilters - Nouveaux filtres à ajouter
+   * @param newTransform - Nouvelles transformations à ajouter
+   */
   const addToHistory = (newFilters: Filters, newTransform: Transform) => {
     const newHistory = history.slice(0, historyIndex + 1)
     newHistory.push({ filters: newFilters, transform: newTransform })
@@ -148,6 +197,9 @@ export default function PhotoEditor() {
     setHistoryIndex(newHistory.length - 1)
   }
 
+  /**
+   * Annule la dernière modification
+   */
   const undo = () => {
     if (historyIndex > 0) {
       const prevState = history[historyIndex - 1]
@@ -157,6 +209,9 @@ export default function PhotoEditor() {
     }
   }
 
+  /**
+   * Rétablit la dernière modification annulée
+   */
   const redo = () => {
     if (historyIndex < history.length - 1) {
       const nextState = history[historyIndex + 1]
@@ -166,7 +221,10 @@ export default function PhotoEditor() {
     }
   }
 
-  const saveImage = () => {
+  /**
+   * Sauvegarde l'image modifiée
+   */
+  const saveImage = useCallback(() => {
     const canvas = document.createElement("canvas")
     const ctx = canvas.getContext("2d")
     const img = imageRef.current
@@ -185,27 +243,61 @@ export default function PhotoEditor() {
       ctx.drawImage(img, -canvas.width / 2, -canvas.height / 2)
 
       const link = document.createElement("a")
-      link.download = "edited_image.jpg"
+      // link.download =( Math.random()*100).toString()+(Math.random()*100).toString() + "edited_image.jpg"
+      link.download =( Math.random()*100).toString()+(Math.random()*100).toString() + "edited_image.png"
       link.href = canvas.toDataURL()
       link.click()
     }
-  }
+  }, [filters, transform])
 
+ 
+  // Fonction pour supprimer l'arrière-plan de l'image
   const removeBackground = async () => {
+    if (!fileInputRef.current?.files?.[0]) return
+
     setLoading(true)
-    // Implement background removal logic here
-    setLoading(false)
+    const formData = new FormData()
+    formData.append("image_file", fileInputRef.current.files[0])
+    formData.append("size", "regular")
+
+    try {
+      const response = await fetch("https://api.remove.bg/v1.0/removebg", {
+        method: "POST",
+        headers: {
+          "X-Api-Key": process.env.NEXT_PUBLIC_REMOVE_BG_API_KEY || "",
+        },
+        body: formData,
+      })
+
+      const blob = await response.blob()
+      setImage(URL.createObjectURL(blob))
+    } catch (error) {
+      console.error("Error removing background:", error)
+    } finally {
+      setLoading(false)
+    }
   }
 
+  /**
+   * Applique un filtre prédéfini
+   * @param preset - Nom du filtre prédéfini
+   */
   const applyPresetFilter = (preset: keyof typeof presetFilters) => {
     setFilters(presetFilters[preset])
     addToHistory(presetFilters[preset], transform)
   }
 
+  /**
+   * Active/désactive le mode de dessin
+   * @param mode - Mode de dessin ("brush" ou "eraser")
+   */
   const toggleDrawMode = (mode: "brush" | "eraser") => {
     setDrawMode(drawMode === mode ? null : mode)
   }
 
+  /**
+   * Initialise le canvas pour le dessin
+   */
   const initializeCanvas = useCallback(() => {
     const canvas = canvasRef.current
     if (canvas) {
@@ -221,6 +313,10 @@ export default function PhotoEditor() {
     }
   }, [brushColor, brushSize])
 
+  /**
+   * Gère le début du dessin
+   * @param e - Événement de souris
+   */
   const handleDrawStart = (e: React.MouseEvent) => {
     if (!drawMode) return
     setIsDrawing(true)
@@ -229,6 +325,10 @@ export default function PhotoEditor() {
     contextRef.current?.moveTo(offsetX, offsetY)
   }
 
+  /**
+   * Gère le dessin en cours
+   * @param e - Événement de souris
+   */
   const handleDraw = (e: React.MouseEvent) => {
     if (!isDrawing || !drawMode) return
     const { offsetX, offsetY } = e.nativeEvent
@@ -236,14 +336,19 @@ export default function PhotoEditor() {
     contextRef.current?.stroke()
   }
 
+  /**
+   * Gère la fin du dessin
+   */
   const handleDrawEnd = () => {
     setIsDrawing(false)
   }
 
+  // Initialise le canvas lors du chargement
   useEffect(() => {
     initializeCanvas()
   }, [initializeCanvas])
 
+  // Met à jour les propriétés du contexte de dessin
   useEffect(() => {
     if (contextRef.current) {
       contextRef.current.strokeStyle = drawMode === "eraser" ? "#ffffff" : brushColor
@@ -265,10 +370,18 @@ export default function PhotoEditor() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={undo} disabled={historyIndex <= 0}>
+            <Button 
+              variant="outline" 
+              onClick={undo} 
+              disabled={!image || historyIndex <= 0}
+            >
               <Undo className="w-4 h-4" />
             </Button>
-            <Button variant="outline" onClick={redo} disabled={historyIndex >= history.length - 1}>
+            <Button 
+              variant="outline" 
+              onClick={redo} 
+              disabled={!image || historyIndex >= history.length - 1}
+            >
               <Redo className="w-4 h-4" />
             </Button>
           </div>
@@ -277,7 +390,7 @@ export default function PhotoEditor() {
         <Card className="bg-background/60 backdrop-blur-sm border-2">
           <CardContent className="p-6">
             <div className="grid lg:grid-cols-[1fr,400px] gap-8">
-              {/* Preview Area */}
+              {/* Zone de prévisualisation */}
               <div className="order-1 lg:order-1">
                 <div className="relative aspect-video w-full bg-black/5 dark:bg-white/5 rounded-lg overflow-hidden">
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -301,8 +414,6 @@ export default function PhotoEditor() {
                     <canvas
                       ref={canvasRef}
                       className="absolute inset-0 w-full h-full"
-                      width={imageRef.current?.naturalWidth || 0}
-                      height={imageRef.current?.naturalHeight || 0}
                       onMouseDown={handleDrawStart}
                       onMouseMove={handleDraw}
                       onMouseUp={handleDrawEnd}
@@ -342,7 +453,18 @@ export default function PhotoEditor() {
                     size="lg"
                     variant="secondary"
                     className="flex-1"
+                    onClick={resetAll}
+                    disabled={!image}
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Réinitialiser
+                  </Button>
+                  <Button 
+                    size="lg"
+                    variant="secondary"
+                    className="flex-1"
                     onClick={saveImage}
+                    disabled={!image}
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Enregistrer
@@ -352,7 +474,7 @@ export default function PhotoEditor() {
                     variant="outline"
                     className="flex-1"
                     onClick={removeBackground}
-                    disabled={loading}
+                    disabled={!image || loading}
                   >
                     {loading ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -364,7 +486,7 @@ export default function PhotoEditor() {
                 </div>
               </div>
 
-              {/* Controls Area */}
+              {/* Panneau de contrôle */}
               <div className="order-2 lg:order-2">
                 <Tabs defaultValue="filters" className="w-full">
                   <TabsList className="w-full grid grid-cols-4 mb-6">
@@ -387,10 +509,13 @@ export default function PhotoEditor() {
                   </TabsList>
 
                   <div className="bg-background/40 backdrop-blur-sm rounded-lg p-6">
-                    {/* Filters Tab */}
+                    {/* Contenu de l'onglet Filtres */}
                     <TabsContent value="filters" className="space-y-6">
                       <div className="grid gap-6">
-                        <Select onValueChange={(value: keyof typeof presetFilters) => applyPresetFilter(value)}>
+                        <Select 
+                          onValueChange={(value: keyof typeof presetFilters) => applyPresetFilter(value)}
+                          disabled={!image}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Filtres prédéfinis" />
                           </SelectTrigger>
@@ -418,6 +543,7 @@ export default function PhotoEditor() {
                                 max={key === "temperature" ? 200 : 200}
                                 step={1}
                                 className="my-2"
+                                disabled={!image}
                                 onValueChange={([newValue]) => {
                                   setFilters((prev) => {
                                     const newFilters = { ...prev, [key]: newValue }
@@ -432,29 +558,49 @@ export default function PhotoEditor() {
                       </div>
                     </TabsContent>
 
-                    {/* Transform Tab */}
+                    {/* Contenu de l'onglet Transformer */}
                     <TabsContent value="transform">
                       <div className="grid grid-cols-2 gap-4">
-                        <Button variant="outline" onClick={() => handleRotate("left")} className="h-24">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => handleRotate("left")} 
+                          className="h-24"
+                          disabled={!image}
+                        >
                           <RotateCcw className="w-6 h-6 mr-2" />
                           Rotation Gauche
                         </Button>
-                        <Button variant="outline" onClick={() => handleRotate("right")} className="h-24">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => handleRotate("right")} 
+                          className="h-24"
+                          disabled={!image}
+                        >
                           <RotateCw className="w-6 h-6 mr-2" />
                           Rotation Droite
                         </Button>
-                        <Button variant="outline" onClick={() => handleFlip("horizontal")} className="h-24">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => handleFlip("horizontal")} 
+                          className="h-24"
+                          disabled={!image}
+                        >
                           <FlipHorizontal className="w-6 h-6 mr-2" />
                           Retourner H
                         </Button>
-                        <Button variant="outline" onClick={() => handleFlip("vertical")} className="h-24">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => handleFlip("vertical")} 
+                          className="h-24"
+                          disabled={!image}
+                        >
                           <FlipVertical className="w-6 h-6 mr-2" />
                           Retourner V
                         </Button>
                       </div>
                     </TabsContent>
 
-                    {/* Draw Tab */}
+                    {/* Contenu de l'onglet Dessiner */}
                     <TabsContent value="draw" className="space-y-6">
                       <div className="grid gap-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -462,6 +608,7 @@ export default function PhotoEditor() {
                             variant={drawMode === "brush" ? "default" : "outline"}
                             onClick={() => toggleDrawMode("brush")}
                             className="h-20"
+                            disabled={!image}
                           >
                             <Paintbrush className="w-6 h-6 mr-2" />
                             Pinceau
@@ -470,6 +617,7 @@ export default function PhotoEditor() {
                             variant={drawMode === "eraser" ? "default" : "outline"}
                             onClick={() => toggleDrawMode("eraser")}
                             className="h-20"
+                            disabled={!image}
                           >
                             <Eraser className="w-6 h-6 mr-2" />
                             Gomme
@@ -485,10 +633,14 @@ export default function PhotoEditor() {
                                   variant="outline"
                                   className="w-full h-10 mt-2"
                                   style={{ backgroundColor: brushColor }}
+                                  disabled={!image}
                                 />
                               </PopoverTrigger>
                               <PopoverContent className="w-auto p-0">
-                                <SketchPicker color={brushColor} onChange={(color) => setBrushColor(color.hex)} />
+                                <SketchPicker 
+                                  color={brushColor} 
+                                  onChange={(color) => setBrushColor(color.hex)} 
+                                />
                               </PopoverContent>
                             </Popover>
                           </div>
@@ -503,6 +655,7 @@ export default function PhotoEditor() {
                               min={1}
                               max={50}
                               step={1}
+                              disabled={!image}
                               onValueChange={([value]) => setBrushSize(value)}
                             />
                           </div>
@@ -510,7 +663,7 @@ export default function PhotoEditor() {
                       </div>
                     </TabsContent>
 
-                    {/* Text Tab */}
+                    {/* Contenu de l'onglet Texte */}
                     <TabsContent value="text" className="space-y-6">
                       <div className="space-y-4">
                         <div>
@@ -520,6 +673,7 @@ export default function PhotoEditor() {
                             onChange={(e) => setText(e.target.value)}
                             placeholder="Entrez votre texte ici"
                             className="mt-2"
+                            disabled={!image}
                           />
                         </div>
 
@@ -531,10 +685,14 @@ export default function PhotoEditor() {
                                 variant="outline"
                                 className="w-full h-10 mt-2"
                                 style={{ backgroundColor: textColor }}
+                                disabled={!image}
                               />
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                              <SketchPicker color={textColor} onChange={(color) => setTextColor(color.hex)} />
+                              <SketchPicker 
+                                color={textColor} 
+                                onChange={(color) => setTextColor(color.hex)} 
+                              />
                             </PopoverContent>
                           </Popover>
                         </div>
@@ -549,6 +707,7 @@ export default function PhotoEditor() {
                             min={10}
                             max={100}
                             step={1}
+                            disabled={!image}
                             onValueChange={([value]) => setTextSize(value)}
                           />
                         </div>
@@ -563,6 +722,7 @@ export default function PhotoEditor() {
                             min={0}
                             max={100}
                             step={1}
+                            disabled={!image}
                             onValueChange={([value]) => setTextPosition((prev) => ({ ...prev, x: value }))}
                           />
                         </div>
@@ -577,6 +737,7 @@ export default function PhotoEditor() {
                             min={0}
                             max={100}
                             step={1}
+                            disabled={!image}
                             onValueChange={([value]) => setTextPosition((prev) => ({ ...prev, y: value }))}
                           />
                         </div>
